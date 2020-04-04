@@ -45,6 +45,9 @@
     <string name="drawer_show_labels">Show icon labels in drawer</string>
     <string name="show_labels_landscape">Show icon labels in landscape mode</string>
 
+    <!-- Default Homescreen -->
+    <string name="default_homescreen">Default homescreen</string>
+
     <!-- Trust apps -->
     <string name="trust_apps_manager_name">Hidden &amp; Protected apps</string>
     <string name="trust_apps_auth_manager">Unlock to manage the hidden and protected apps</string>

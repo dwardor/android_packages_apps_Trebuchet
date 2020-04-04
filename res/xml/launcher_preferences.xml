@@ -34,6 +34,12 @@
             android:defaultValue="@bool/allow_rotation"
             android:persistent="true" />
 
+        <ListPreference
+            android:key="pref_homescreen_default_screen_id"
+            android:title="@string/default_homescreen"
+            android:defaultValue="0"
+            android:persistent="true" />
+
         <SwitchPreference
             android:defaultValue="true"
             android:key="pref_workspace_edit"

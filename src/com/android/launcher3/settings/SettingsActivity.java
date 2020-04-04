@@ -35,6 +35,7 @@ import android.provider.Settings;
 import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
+import androidx.preference.ListPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceCategory;
 import androidx.preference.PreferenceFragment;
@@ -78,6 +79,8 @@ public class SettingsActivity extends Activity
     public static final String KEY_MINUS_ONE = "pref_enable_minus_one";
     public static final String KEY_TRUST_APPS = "pref_trust_apps";
     public static final String KEY_ICON_PACK = "pref_icon_pack";
+    public static final String KEY_DEFAULT_HOMESCREEN_ID = "pref_homescreen_default_screen_id";
+    public static final String KEY_WORKSPACE_PAGE_COUNT = "pref_workspace_page_count";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -142,6 +145,8 @@ public class SettingsActivity extends Activity
         private String mHighLightKey;
         private boolean mPreferenceHighlighted = false;
 
+	private SharedPreferences mPrefs;
+
         @Override
         public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
             final Bundle args = getArguments();
@@ -156,6 +161,9 @@ public class SettingsActivity extends Activity
 
             getPreferenceManager().setSharedPreferencesName(LauncherFiles.SHARED_PREFERENCES_KEY);
             setPreferencesFromResource(R.xml.launcher_preferences, rootKey);
+
+	    mPrefs = Utilities.getPrefs(getActivity().getApplicationContext());
+            mPrefs.registerOnSharedPreferenceChangeListener(this);
 
             updatePreferences();
 
@@ -188,6 +196,10 @@ public class SettingsActivity extends Activity
                     }
                 }
             }
+
+	    // set initial values for the default homescreen preference component.
+	    updateDefaultHomescreenPreferenceEntries(
+                    (ListPreference) findPreference(KEY_DEFAULT_HOMESCREEN_ID));
         }
 
         @Override
@@ -201,6 +213,11 @@ public class SettingsActivity extends Activity
             switch (key) {
                 case IconPackStore.KEY_ICON_PACK:
                     updatePreferences();
+                    break;
+                case KEY_DEFAULT_HOMESCREEN_ID:
+                    ListPreference defaultHomescreenPreference =
+                            (ListPreference) findPreference(KEY_DEFAULT_HOMESCREEN_ID);
+                    defaultHomescreenPreference.setSummary(defaultHomescreenPreference.getEntry());
                     break;
             }
         }
@@ -289,6 +306,8 @@ public class SettingsActivity extends Activity
                     requestAccessibilityFocus(getListView());
                 }
             }
+	    updateDefaultHomescreenPreferenceEntries(
+                    (ListPreference) findPreference(KEY_DEFAULT_HOMESCREEN_ID));
         }
 
         private PreferenceHighlighter createHighlighter() {
@@ -334,6 +353,20 @@ public class SettingsActivity extends Activity
                 startActivity(new Intent(getActivity(), IconPackSettingsActivity.class));
                 return true;
             });
+        }
+
+	private void updateDefaultHomescreenPreferenceEntries(ListPreference preference) {
+            if (preference != null) {
+                int pageCount = mPrefs.getInt(SettingsActivity.KEY_WORKSPACE_PAGE_COUNT, 1);
+                String[] prefEntries = new String[pageCount];
+                for(int i = 0; i < pageCount; i++) {
+                    prefEntries[i] = String.valueOf(i);
+                }
+
+                preference.setSummary(preference.getValue());
+                preference.setEntries(prefEntries);
+                preference.setEntryValues(prefEntries);
+            }
         }
     }
 }

@@ -37,6 +37,7 @@ import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
+import androidx.preference.ListPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceFragmentCompat.OnPreferenceStartFragmentCallback;
@@ -77,6 +78,8 @@ public class SettingsActivity extends FragmentActivity
 
     public static final String KEY_TRUST_APPS = "pref_trust_apps";
     public static final String KEY_ICON_PACK = "pref_icon_pack";
+    public static final String KEY_DEFAULT_HOMESCREEN_ID = "pref_homescreen_default_screen_id";
+    public static final String KEY_WORKSPACE_PAGE_COUNT = "pref_workspace_page_count";
 
     private static final String KEY_MINUS_ONE = "pref_enable_minus_one";
     private static final String SEARCH_PACKAGE = "com.google.android.googlequicksearchbox";
@@ -146,6 +149,8 @@ public class SettingsActivity extends FragmentActivity
         private String mHighLightKey;
         private boolean mPreferenceHighlighted = false;
 
+	private SharedPreferences mPrefs;
+
         @Override
         public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
             final Bundle args = getArguments();
@@ -160,6 +165,9 @@ public class SettingsActivity extends FragmentActivity
 
             getPreferenceManager().setSharedPreferencesName(LauncherFiles.SHARED_PREFERENCES_KEY);
             setPreferencesFromResource(R.xml.launcher_preferences, rootKey);
+
+	    mPrefs = Utilities.getPrefs(getActivity().getApplicationContext());
+            mPrefs.registerOnSharedPreferenceChangeListener(this);
 
             updatePreferences();
 
@@ -182,6 +190,10 @@ public class SettingsActivity extends FragmentActivity
                     screen.removePreference(preference);
                 }
             }
+
+	    // set initial values for the default homescreen preference component.
+	    updateDefaultHomescreenPreferenceEntries(
+                    (ListPreference) findPreference(KEY_DEFAULT_HOMESCREEN_ID));
         }
 
         @Override
@@ -195,6 +207,11 @@ public class SettingsActivity extends FragmentActivity
             switch (key) {
                 case IconPackStore.KEY_ICON_PACK:
                     updatePreferences();
+                    break;
+                case KEY_DEFAULT_HOMESCREEN_ID:
+                    ListPreference defaultHomescreenPreference =
+                            (ListPreference) findPreference(KEY_DEFAULT_HOMESCREEN_ID);
+                    defaultHomescreenPreference.setSummary(defaultHomescreenPreference.getEntry());
                     break;
             }
         }
@@ -278,6 +295,8 @@ public class SettingsActivity extends FragmentActivity
                     requestAccessibilityFocus(getListView());
                 }
             }
+	    updateDefaultHomescreenPreferenceEntries(
+                    (ListPreference) findPreference(KEY_DEFAULT_HOMESCREEN_ID));
         }
 
         private PreferenceHighlighter createHighlighter() {
@@ -323,6 +342,20 @@ public class SettingsActivity extends FragmentActivity
                 startActivity(new Intent(getActivity(), IconPackSettingsActivity.class));
                 return true;
             });
+        }
+
+	private void updateDefaultHomescreenPreferenceEntries(ListPreference preference) {
+            if (preference != null) {
+                int pageCount = mPrefs.getInt(SettingsActivity.KEY_WORKSPACE_PAGE_COUNT, 1);
+                String[] prefEntries = new String[pageCount];
+                for(int i = 0; i < pageCount; i++) {
+                    prefEntries[i] = String.valueOf(i);
+                }
+
+                preference.setSummary(preference.getValue());
+                preference.setEntries(prefEntries);
+                preference.setEntryValues(prefEntries);
+            }
         }
     }
 }

@@ -42,6 +42,7 @@ import android.app.WallpaperManager;
 import android.appwidget.AppWidgetHostView;
 import android.appwidget.AppWidgetProviderInfo;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Point;
@@ -64,6 +65,7 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.Toast;
 
 import com.android.launcher3.LauncherAppWidgetHost.ProviderChangedListener;
+import com.android.launcher3.settings.SettingsActivity;
 import com.android.launcher3.accessibility.AccessibleDragListenerAdapter;
 import com.android.launcher3.accessibility.WorkspaceAccessibilityHelper;
 import com.android.launcher3.anim.Interpolators;
@@ -288,6 +290,25 @@ public class Workspace extends PagedView<WorkspacePageIndicator>
         setMotionEventSplittingEnabled(true);
         setOnTouchListener(new WorkspaceTouchListener(mLauncher, this));
         mStatsLogManager = StatsLogManager.newInstance(context);
+
+        setOnHierarchyChangeListener(new OnHierarchyChangeListener() {
+            @Override
+            public void onChildViewAdded(View parent, View child) {
+                updateWorkspacePageCountPreference();
+            }
+
+            @Override
+            public void onChildViewRemoved(View parent, View child) {
+                updateWorkspacePageCountPreference();
+            }
+
+            private void updateWorkspacePageCountPreference() {
+                SharedPreferences preferences = Utilities.getPrefs(mLauncher);
+                preferences.edit()
+                        .putInt(SettingsActivity.KEY_WORKSPACE_PAGE_COUNT, getPageCount())
+                        .apply();
+            }
+        });
     }
 
     @Override
@@ -3215,7 +3236,10 @@ public class Workspace extends PagedView<WorkspacePageIndicator>
 
     /** Calls {@link #snapToPage(int)} on the {@link #DEFAULT_PAGE}, then requests focus on it. */
     public void moveToDefaultScreen() {
-        int page = DEFAULT_PAGE;
+        String preferenceValue = Utilities.getPrefs(mLauncher)
+                .getString(SettingsActivity.KEY_DEFAULT_HOMESCREEN_ID,
+                        String.valueOf(DEFAULT_PAGE));
+        int page = preferenceValue != null ? Integer.parseInt(preferenceValue) : DEFAULT_PAGE;
         if (!workspaceInModalState() && getNextPage() != page) {
             snapToPage(page);
         }
